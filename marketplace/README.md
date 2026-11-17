@@ -37,15 +37,25 @@
 `github:ODO-TECH/dsh-yukkuli` 即可。`dshmarket` 只吃 awesome 的 catalog，所以进了 awesome
 就等于进了市场。
 
-## 现在差什么（2026-11-17 查 GitHub API 的实测结果）
+## 现在差什么（2026-11-17 push 之后复查）
 
-| 项 | 现状 | 要做的 |
+| 项 | 现状 | 还要做的 |
 |---|---|---|
-| 仓库内容 | **空的**（0 commits，`size: 0`） | 把 `dist/github/repo/` 那棵干净树 push 上去 |
-| topics | `[]` | 仓库设置里加 `dsh-plugin` |
-| description | 营销腔英文（"Hakurei-shrine-tier … heavily based"） | 换成事实描述，与 YAML 的 `en` 一致 |
-| license | GitHub 识别为 `null` | push 根目录 `LICENSE` 后会自动识别成 MIT |
-| 创建时间 | `2026-11-17T10:38:10Z` | awesome 的 PR 要等 **11-18 同一时刻之后**再提 |
+| 仓库内容 | ✅ **已 push**：`main` @ `0ac3255`（93 文件）+ 标签 `v0.3.0`，`pushed_at 2026-11-17T12:54:38Z` | 无 |
+| topics | `[]` | 仓库设置里加 `dsh-plugin`（或下面那条 API 命令） |
+| description | 仍是营销腔英文（"Hakurei-shrine-tier … heavily based"） | 换成下面的事实描述 |
+| license | API 报 **`NOASSERTION`** —— MIT 正文是标准的，但 `LICENSE` 末尾用 `---` 追加了 SDK/东方免责段，识别器因此不认 | 把那段挪走（README「许可」里已有副本）后重新识别成 MIT |
+| 创建时间 | `2026-11-17T10:38:10Z` | awesome 的 PR 要等 **11-18 10:38 之后**再提 |
+
+一条命令把 topic 与 description 一起设掉（需要一个 `repo` 权限的令牌，Desktop 侧不允许程序读取 git 凭据）：
+
+```bash
+curl -X PATCH https://api.github.com/repos/ODO-TECH/dsh-yukkuli \
+  -H "Authorization: Bearer <你的 PAT>" \
+  -H "Accept: application/vnd.github+json" \
+  -H "Content-Type: application/json" \
+  -d '{"description":"Yukkuri voice for DeepSeek Harness: reads assistant replies aloud locally through AquesTalk, with no network calls.","topics":["dsh-plugin","tts","aquestalk","touhou","cordis"]}'
+```
 
 建议的仓库 description（与 `ODO-TECH__dsh-yukkuli.yml` 的 `en` 同口径）：
 

@@ -680,3 +680,91 @@ lockfile、`.lnk` / `.zip` / `.tgz`、`output*` 音频一律拒绝入树。
   「包根的 `package.json`」。
 - `marketplace/dsh-plugin.org-issue.md` 的自查清单原来把「已打 topic」勾成 `[x]`，
   而远端实测 `topics: []` —— 改回 `[ ]`，并补一条「干净树已 push / description 已换」。
+
+## 二十二、声线口径修正 + 压缩 + 建库提交
+
+### 先修口径（用户指出：蕾米莉亚预设已删，AQTK2 用不上）
+
+起因是上面那个网络探针顺手撞出 `voice: 'remilia'` 合成失败。查 `core/docs/角色音色对照.md`
+的定稿表：**只有 6 个角色**，蕾米莉亚 / 十六夜咲夜 / 伊吹萃香 都在「已停用」（试听后判定不对），
+而 AQTK2 引擎代码是刻意保留的（`codec/aqtk2.js`，目前没有角色用它）。
+
+于是把散在各处的「七个声线」口径统一成六个，并把 **AquesTalk2 从 SDK 前置要求里删掉**：
+
+| 文件 | 改了什么 |
+|---|---|
+| 根 `README.md` | 特性行「七个声线」→ 六个；试听括注；SDK 段只留 AquesTalk10 + AqKanji2Koe（并说明 AQTK1 那三个声线由包内 `aquestalk.js` 的 v86 在本地跑，不用另外下 SDK）；声线表删 `remilia` 行 |
+| `core/README.md` | `7 预设 + 8 角色` → `7 + 6`；表删 remilia；加「已停用」说明 |
+| `packaging/offline-install.md`、`marketplace/dsh-plugin.org-issue.md` | SDK 需求改成两个库 |
+| `HANDOFF.md` | 根目录草案标注成「早期 7 角色草案（含后来停用的蕾米莉亚等）」 |
+
+**顺手修的第二个口径错**：帕秋莉的声库到处写着 `AQTK1 f2`，但定稿是 **f1 + speed 92 + pitch 1.04**
+（`characters.js` 里 `voice: 'f1'`）。README 与 core/README 的表都改了。
+
+> 用户自己改过根 README（标题、`> !?⑨⑨?!是正宗幻想乡口音！？`、`(ᗜˬᗜ)`、「丢给大肥鱼」那段），
+> 明确说过**别动这些整活内容**。所以本轮对 README 只做定点替换，并把「整活文本仍在」写成验收项：
+> 逐串检查 `⑨⑨` / `(ᗜˬᗜ)` / `大肥鱼` / `少女写代码中` 都在，且暂存树与工作树逐字节一致。
+
+`presets.js:52` 那个 `characters.voiceOf()` 不存在的报错路径**用户拍板不动**（影响面：只有手工把
+配置里的 `voice` 写成不存在的 id 才会碰到；`/yukkuri voice <id>` 有白名单，会干净拒绝）。
+
+### 压缩与打包产物（用户授权「按这个提交，所有平台仓库都上传」）
+
+| 产物 | 怎么出 | 结果 |
+|---|---|---|
+| npm tarball | 在 `dist/npm/dsh-yukkuri-tts/` 里 `npm pack --pack-destination <绝对路径>` | `dist/tarballs/dsh-yukkuri-tts-0.3.0.tgz`，**74.4 kB / 35 文件** |
+| 离线包 zip | `/c/Windows/System32/tar.exe -caf`（**bsdtar** 才能出 zip；Git Bash 自带的是 GNU tar 1.35，只会 `Cannot connect to D:`） | `dist/zip/dsh-yukkuri-tts-offline-0.3.0.zip`，**7.16 MB**，`-tf` 数过 456 个文件条目 |
+
+> bsdtar 的 `-C` 只作用于**输入**，输出名给相对路径会落在当前工作目录 —— 第一次就压到了仓库根，
+> 已挪进 `dist/zip/`。压完必须 `-tf` 点条目数，别只看退出码 0。
+
+### 建库与提交
+
+在 `dist/git-push/dsh-yukkuli/`（`dist/github/repo/` 的一份拷贝，**刻意不与暂存树共用目录** ——
+`pack.cjs` 会清通道目录，`.git` 放进去会被删）里：
+
+- `git init -b main` → `git add -A` → 提交 → `git tag -a v0.3.0`
+- 身份用 `git -c user.name=… -c user.email=…` 传参，**不写任何 git 配置**
+- `git ls-files` = **93**，与工作树文件数一致；提交后 `git status --porcelain` 空
+- 推上去之前扫过一遍：`api_key|secret|passw|BEGIN .*PRIVATE|npm_…` 正则**零命中**，
+  `*.dll` / `aqdic.bin` / `*.node` **零命中**（SDK 二进制没混进仓库）
+
+### 这一轮实测的凭据现状（决定了哪些「上传」我能做、哪些不能）
+
+| 检查 | 结果 | 影响 |
+|---|---|---|
+| `git --version` | 2.52.0 | git 可用 |
+| `npm whoami` | `need auth` | **发不了 npm** |
+| `GH_TOKEN` / `GITHUB_TOKEN` / `NPM_TOKEN` | 全空 | 没有 API 令牌 |
+| 凭据管理器里的 GitHub 条目 | 无（`cmdkey /list` 不命中） | push 会走交互式登录 |
+| `~/.ssh` | 只有 `known_hosts`，无私钥 | 走不了 SSH |
+| `github.com/…info/refs?service=git-receive-pack` | **401** | 网络通，缺的是授权 |
+| `codeload…/tar.gz/refs/heads/main` | 404 | 仓库确实还没有分支 |
+| `api.github.com/zen` / `ghfast.top` | 200 / 200 | 出口正常 |
+
+**踩到的一次卡住**：`GIT_TERMINAL_PROMPT=0 -c credential.interactive=false git push` 三个命令
+**一行输出都没有、挂死 3 分钟**。Git Bash 的 curl 同期能通，说明不是网络，是 GCM 仍在等交互。
+所以下次判断「push 卡住」先分清：401 = 缺凭据（能立刻报错）；无输出挂住 = 认证器在等 UI。
+
+### push 结果：成功
+
+把上面那次去掉「不许交互」的限制、挂后台重跑，**推上去了**：
+
+```
+To https://github.com/ODO-TECH/dsh-yukkuli.git
+ * [new branch]      main -> main        （main @ 0ac3255，93 文件）
+ * [new tag]         v0.3.0 -> v0.3.0
+```
+
+`git ls-remote` 与 `api.github.com/repos/…` 双向核对过：`default_branch: main`、
+`pushed_at: 2026-11-17T12:54:38Z`。所以 GCM 里其实是有一次可用凭据的 ——
+之前那次挂住是 `credential.interactive=false` 把它逼进了死路，**不是没登录**。
+
+### 剩下要人拍板 / 做不了的
+
+| 项 | 状态 |
+|---|---|
+| `npm publish` | **做不了**：`npm whoami` = `need auth`，`~/.npmrc` 不存在，没有 `NPM_TOKEN`。tarball 已备好 `dist/tarballs/dsh-yukkuri-tts-0.3.0.tgz` |
+| awesome PR | **今天提不了**：CI 查仓库创建满 1 天，`created_at` 是 `2026-11-17T10:38:10Z` → 最早 11-18 10:38Z 之后 |
+| dsh-plugin.org 收录 | 网页表单要用户本人账号，`marketplace/dsh-plugin.org-issue.md` 正文已备好 |
+| LICENSE 归类 | push 后 API 报 `license: NOASSERTION` —— MIT 正文是标准的，但末尾用 `---` 追加了 SDK/东方免责段，识别器因此不认。那段在 README「许可」里已有副本，删掉即可变 MIT，**属许可文本，等用户点头** |

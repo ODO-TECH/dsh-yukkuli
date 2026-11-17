@@ -233,14 +233,18 @@ DSH 只接受这两个形状：
 
 ## 当前最该做的事（按优先级）
 
-1. **`git init` + 首次 push** —— 远端 `ODO-TECH/dsh-yukkuli` 已建好但**是空仓库**（0 commits），
-   本地还没有 `.git`。要 push 的干净树已经暂存在 `dist/github/repo/`（93 文件）。
-   push 之后顺手在仓库设置里加 topic `dsh-plugin`、把营销腔 description 换成事实描述
-   （建议文本见 [`marketplace/README.md`](marketplace/README.md)）。
+1. ✅ **仓库已建好并 push** —— 在 `dist/git-push/dsh-yukkuli/`（`dist/github/repo/` 的**拷贝**，
+   别把 `.git` 放进通道目录，`pack.cjs` 会清它们）里 `git init -b main` + 提交 + `v0.3.0` 标签；
+   远端 `main` @ `0ac3255`（93 文件）、`pushed_at 2026-11-17T12:54:38Z`。
+   **还剩三件**：topic `dsh-plugin`、description 换成事实描述、`LICENSE` 末尾那段追加声明
+   （正文是标准 MIT，但追加段让 GitHub 报 `NOASSERTION`）—— 都要仓库主人的凭据或拍板，
+   现成命令见 [`marketplace/README.md`](marketplace/README.md)。
 2. **`test:run` 脚本** —— 把逐文件直跑固化下来，让 CI 与本地对得上。
 3. **npm 发布** —— **只发仓库根那一个包**（`dsh-yukkuri-tts` 0.3.0，core 随包分发）。
    白名单已定稿：`npm pack --dry-run` = **35 文件**（解包 193.9 kB；README / LICENSE 被 npm
-   强制带入，压不到 31）。发之前先 `npm pack` → 临时目录装一遍 → 加载 + 真合成。
+   强制带入，压不到 31）。tarball 已出：`dist/tarballs/dsh-yukkuri-tts-0.3.0.tgz`（74.4 kB）。
+   **卡在这台机器没登录 npm**（`npm whoami` = need auth，无 `~/.npmrc` / `NPM_TOKEN`）——
+   `npm adduser` 之后由人跑 `npm publish`；发之前先在临时目录 `npm i <tgz>` 装一遍再加载 + 真合成。
    `plugin/` 与 `core/` 那两份清单是 `private`，**别发**。
 4. ✅ **`repository` 字段** —— 三份 `package.json` 都已填（plugin / core 带 `directory`），
    根 README 的 `<这个仓库>` 占位也换成了真 URL。

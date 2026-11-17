@@ -22,7 +22,7 @@
 | 端到端 | 会话结束一轮 → 合成 → `/pending` → 浏览器 `<audio>` 响，已通 |
 | 可移植性 | 源码内**零写死盘符路径**（有测试锁）；core 三层解析；SDK 默认 `~/yukkuri-sdk` |
 | 安装通道 | 本地目录 / GitHub / npm / 离线包 **四条都验证过**（§8.5） |
-| 已知阻塞 | `npm test` 在受限环境不可用（§5.2）；`dsh plugin add` 在受限环境跑不了 pnpm（§8.5 坑 15）；还没真发 npm / 还没有 git 历史 |
+| 已知阻塞 | `npm test` 在受限环境不可用（§5.2）；`dsh plugin add` 在受限环境跑不了 pnpm（§8.5 坑 15）；**npm 未发布**（本机 `npm whoami` = need auth）；仓库已 push，但 topic / description / LICENSE 归类还差仓库所有者操作 |
 
 一句话：**功能完整，工程化补上了「装得走」这一段。** 下一步的重点是发版流程与 CI，不是加功能。
 
@@ -514,7 +514,7 @@ node packaging/pack.cjs --no-deps       # 离线树不带 node_modules（快速�
 `sdk/`、`_src/`、lockfile、`.lnk` / `.zip` / `.tgz`、临时 wav、任何 `_` 开头的路径
 混进暂存树就当场报错。zip / tgz 与 `npm publish` 都是独立步骤，要人拍板。
 
-**当前是暂存树，未压缩**：
+**三个通道目录是暂存树**；tarball / zip 已按用户授权出好，仓库树也已 push（见下面 `git-push/`）：
 
 ```
 dist/
@@ -524,9 +524,20 @@ dist/
 │   └── repo/                   93 文件 / 949 kB   ← 要 push 的干净仓库树
 ├── offline/
 │   └── dsh-yukkuri-tts/       456 文件 / 27.1 MB  ← 运行树 + 预装 node_modules + 安装.md
+├── tarballs/
+│   └── dsh-yukkuri-tts-0.3.0.tgz       74.4 kB   ← npm publish 用（人工跑 npm pack 出）
+├── zip/
+│   └── dsh-yukkuri-tts-offline-0.3.0.zip  7.16 MB ← 离线分发（人工跑 bsdtar 出）
+├── git-push/
+│   └── dsh-yukkuli/            repo/ 的拷贝 + .git ← **已 push**：main @ 0ac3255 + tag v0.3.0
 ├── manifests/                 逐文件明细（每通道一份）
 └── MANIFEST.txt               汇总：位置 / 文件数 / 体积 / 装法
 ```
+
+> `pack.cjs` 只生成前三个通道目录。`tarballs/` / `zip/` / `git-push/` 是**人工步骤**：
+> `npm pack --pack-destination` 出 tarball；zip 必须用 `/c/Windows/System32/tar.exe -caf`
+> （Git Bash 的 GNU tar 1.35 不会做 zip）；`git-push/` 是 `github/repo/` 的**拷贝**再 `git init` ——
+> 别在通道目录里放 `.git`，`pack.cjs` 重跑会把通道目录整个清掉。
 
 | 通道 | 产物 | 极简到什么程度 |
 |---|---|---|

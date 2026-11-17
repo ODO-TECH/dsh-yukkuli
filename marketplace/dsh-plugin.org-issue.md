@@ -59,8 +59,10 @@ MIT
 ### 提交前自查
 
 - [x] 仓库已公开
-- [ ] 已给仓库打上 `dsh-plugin` topic —— **还没打**（见 [`README.md`](README.md) 的「现在差什么」）
-- [x] README 里包含安装命令
+- [x] 干净树已 push（`main` @ `0ac3255`，93 文件，标签 `v0.3.0`）
+- [x] README 里包含安装命令（`dsh plugin --profile web add dsh-yukkuri-tts`）
 - [x] 插件导出 `apply(ctx)`
 - [x] 仓库根目录有 `package.json`（声明了 `dsh.bundle.patch`）
-- [ ] 干净树已 push（远端目前 0 commits）、description 已换成事实描述
+- [ ] 已给仓库打上 `dsh-plugin` topic —— **还没打**
+- [ ] description 已换成事实描述 —— 仍是营销腔
+- [ ] `LICENSE` 能被识别成 MIT —— 现在报 `NOASSERTION`（正文标准，末尾追加了免责段）成事实描述
