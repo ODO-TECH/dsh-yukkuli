@@ -1,0 +1,42 @@
+{
+  "name": "yukkuri-core",
+  "version": "1.1.0",
+  "private": true,
+  "description": "油库里语音合成核心：文本 → 假名 → 音素 → WAV（AquesTalk 本地链路）。不单独发 npm，随 dsh-yukkuri-tts 一起分发；这份清单的作用是声明 type=commonjs。",
+  "type": "commonjs",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "yukkuri",
+    "aquestalk",
+    "tts",
+    "voice",
+    "touhou"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ODO-TECH/dsh-yukkuli.git",
+    "directory": "core"
+  },
+  "homepage": "https://github.com/ODO-TECH/dsh-yukkuli#readme",
+  "bugs": {
+    "url": "https://github.com/ODO-TECH/dsh-yukkuli/issues"
+  },
+  "dependencies": {
+    "aquestalk.js": "^1.0.7",
+    "koffi": "^3.3.8",
+    "pinyin-pro": "^3.29.5",
+    "pinyin-to-kana": "^1.0.1"
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "name": "dsh-yukkuri-tts",
+  "version": "0.3.0",
+  "description": "DSH 油库里朗读：把会话里的话用 AquesTalk10 念出来（本地合成，不依赖浏览器）",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "plugin/lib/index.js",
+  "exports": {
+    ".": "./plugin/lib/index.js",
+    "./client": "./plugin/lib/client.js",
+    "./cordis.patch.yml": "./plugin/cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "plugin/lib",
+    "plugin/cordis.patch.yml",
+    "core/package.json",
+    "core/src",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./plugin/cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "slots"
+      ],
+      "external": [
+        "react"
+      ]
+    }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ODO-TECH/dsh-yukkuli.git"
+  },
+  "homepage": "https://github.com/ODO-TECH/dsh-yukkuli#readme",
+  "bugs": {
+    "url": "https://github.com/ODO-TECH/dsh-yukkuli/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "tts",
+    "text-to-speech",
+    "aquestalk",
+    "yukkuri",
+    "油库里",
+    "cordis"
+  ],
+  "dependencies": {
+    "aquestalk.js": "^1.0.7",
+    "koffi": "^3.3.8",
+    "pinyin-pro": "^3.29.5",
+    "pinyin-to-kana": "^1.0.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": []
+  }
+}

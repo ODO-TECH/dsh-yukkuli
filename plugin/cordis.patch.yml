@@ -1,0 +1,4 @@
+# DSH 油库里朗读
+- insert:
+    - id: yukkuri-tts
+      name: 'dsh-yukkuri-tts'
