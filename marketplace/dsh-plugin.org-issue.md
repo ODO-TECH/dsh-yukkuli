@@ -23,11 +23,9 @@ https://github.com/ODO-TECH/dsh-yukkuli
 dsh plugin --profile web add github:ODO-TECH/dsh-yukkuli
 ```
 
-发了 npm 之后可以改成：
-
-```
-dsh plugin --profile web add dsh-yukkuri-tts
-```
+**不发 npm**（2026-11-18 决定）。本站 FAQ 写明：没有 npm 包的仓库**照常收录展示**（源码安装），
+但不会出现在 DSH 内的「插件中心」（那里只展示 npm 一键安装）。免 npm 的另一条路是 DSH「发现」页
+添加索引源 `https://odo-tech.github.io/dsh-yukkuli/market/index.json`（git 源，已上线）。
 
 ### 兼容与运行要求
 
@@ -45,9 +43,10 @@ MIT
 
 ### 截图 / 演示
 
-<!-- 建议放两张：① 设置页「油库里」面板（声线下拉 + 试听）② 会话里助手说完一轮后正在播报的样子 -->
-
-（待补）
+模板里这一项是**可选**的（"截图、演示地址或真实输出"三选一）。不给截图就用仓库里现成的
+6 条试听样音当真实输出：https://github.com/ODO-TECH/dsh-yukkuli/tree/main/output-chars
+（六个声线各一条 wav，README 已引用）。要补截图的话建议两张：
+① 设置页「油库里」面板（声线下拉 + 试听）② 会话里助手说完一轮后正在播报的样子。
 
 ### 补充说明
 
@@ -59,10 +58,10 @@ MIT
 ### 提交前自查
 
 - [x] 仓库已公开
-- [x] 干净树已 push（`main` @ `0ac3255`，93 文件，标签 `v0.3.0`）
-- [x] README 里包含安装命令（`dsh plugin --profile web add dsh-yukkuri-tts`）
+- [x] 干净树已 push（`main` @ `74e6b17`，95 文件，标签 `v0.3.0`）
+- [x] README 里包含安装命令（`dsh plugin --profile web add github:ODO-TECH/dsh-yukkuli`）
 - [x] 插件导出 `apply(ctx)`
 - [x] 仓库根目录有 `package.json`（声明了 `dsh.bundle.patch`）
-- [ ] 已给仓库打上 `dsh-plugin` topic —— **还没打**
-- [ ] description 已换成事实描述 —— 仍是营销腔
-- [ ] `LICENSE` 能被识别成 MIT —— 现在报 `NOASSERTION`（正文标准，末尾追加了免责段）成事实描述
+- [x] 已给仓库打上 `dsh-plugin` topic（2026-11-18，共 5 个 topic）
+- [x] description 已换成事实描述（2026-11-18）
+- [x] `LICENSE` 能被识别成 MIT（2026-11-18 删追加段后 API 报 `MIT`）

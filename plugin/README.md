@@ -62,11 +62,15 @@ dsh plugin --profile web add "file:<仓库绝对路径>"
 装的是**仓库根**，不是 `/plugin`：运行依赖（koffi / pinyin-pro / aquestalk.js /
 pinyin-to-kana）声明在根清单里，`plugin/package.json` 只是 `private` 的开发清单。
 
-也可以从 npm 装（**core 随包分发，只装这一个包**）：
+**npm 没发**（2026-11-18 决定），所以 `add dsh-yukkuri-tts` 这种包名写法装不到。
+免 npm 的另外两条路（core 都随包在内，只装这一个包）：
 
 ```powershell
-dsh plugin --profile web add dsh-yukkuri-tts
+dsh plugin --profile web add github:ODO-TECH/dsh-yukkuli
 ```
+
+或在 DSH「发现」页添加索引源 `https://odo-tech.github.io/dsh-yukkuli/market/index.json`
+（插件页先开实验性「自定义插件索引」），卡片点安装，走的是 git 源。
 
 `dsh plugin` 只是把参数**原样转发给 pnpm**（在 profile 目录下执行），所以
 `add` / `remove` / `why` 这些 pnpm 子命令都能用。

@@ -451,7 +451,8 @@ cd ..
 |---|---|---|---|---|
 | 本地目录 | `dsh plugin --profile web add "file:<仓库根>"` | 磁盘上的仓库 | pnpm | 软链接，`files` 不生效 |
 | GitHub | `add github:ODO-TECH/dsh-yukkuli` | 仓库根 `package.json` | pnpm | `npm pack` 根包 → 解到 `node_modules/` 再加载 |
-| npm | `add dsh-yukkuri-tts` | registry（仓库根清单） | pnpm | 暂存树 `npm pack --dry-run` + 加载 + 真合成 |
+| npm | **未发布**（2026-11-18 决策不发）；`add dsh-yukkuri-tts` 只有将来真发了才可用 | registry（仓库根清单） | pnpm | 暂存树 `npm pack --dry-run` + 加载 + 真合成 |
+| DSH 市场索引 | 「发现」页添加索引源 `https://odo-tech.github.io/dsh-yukkuli/market/index.json` | `market/index.json`（git 源）→ GitHub Pages | pnpm（git spec） | 官方校验器 parseMarketIndex + 线上 200 / 零重定向 |
 | 离线包 | 解压 → `add "file:<解压目录>/dsh-yukkuri-tts"` | 本地 zip（自带 `node_modules`） | 包里已装好 | 清单核对 + 加载 + 真合成 |
 
 **为什么仓库根要有一个 `package.json`**：`github:` 通道和插件索引扫描都从仓库根读清单，

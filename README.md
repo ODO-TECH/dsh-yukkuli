@@ -52,16 +52,17 @@
 ### 2. 装插件
 
 ```bash
-dsh plugin --profile web add dsh-yukkuri-tts
+dsh plugin --profile web add github:ODO-TECH/dsh-yukkuli
 ```
 
 合成核心随包分发，**不用另装第二个包**。装完**重启 DSH**。
+本插件**没发 npm**，所以 `add dsh-yukkuri-tts` 这种包名写法装不到，别用。
 
-不想用 npm 的话，另外三条途径装的是同一个东西：
+另外三条途径装的是同一个东西：
 
 | 途径 | 命令 |
 |---|---|
-| GitHub | `dsh plugin --profile web add github:ODO-TECH/dsh-yukkuli` |
+| DSH「发现」页 | 插件页打开实验性「自定义插件索引」→ **发现** → 添加索引源 `https://odo-tech.github.io/dsh-yukkuli/market/index.json` → 卡片点安装 |
 | 本地源码 | `git clone https://github.com/ODO-TECH/dsh-yukkuli.git` 后 `dsh plugin --profile web add "file:<仓库绝对路径>"` |
 | 离线包 | 解压后 `dsh plugin --profile web add "file:<解压目录>\dsh-yukkuri-tts"`，细节见包内 `安装.md` |
 
