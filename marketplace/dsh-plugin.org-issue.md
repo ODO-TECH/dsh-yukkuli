@@ -43,10 +43,12 @@ MIT
 
 ### 截图 / 演示
 
-模板里这一项是**可选**的（"截图、演示地址或真实输出"三选一）。不给截图就用仓库里现成的
-6 条试听样音当真实输出：https://github.com/ODO-TECH/dsh-yukkuli/tree/main/output-chars
-（六个声线各一条 wav，README 已引用）。要补截图的话建议两张：
-① 设置页「油库里」面板（声线下拉 + 试听）② 会话里助手说完一轮后正在播报的样子。
+设置页「油库里」面板：自动朗读开关、声源下拉（6 个东方角色 + 7 个预设）、情绪、试听、
+播放队列与诊断计数。
+
+![设置面板](https://raw.githubusercontent.com/ODO-TECH/dsh-yukkuli/main/marketplace/screenshot-settings.png)
+
+真实输出（六个声线各一条试听 wav）：https://github.com/ODO-TECH/dsh-yukkuli/tree/main/output-chars
 
 ### 补充说明
 
@@ -58,7 +60,7 @@ MIT
 ### 提交前自查
 
 - [x] 仓库已公开
-- [x] 干净树已 push（`main` @ `74e6b17`，95 文件，标签 `v0.3.0`）
+- [x] 干净树已 push（95 文件 + 上架截图，标签 `v0.3.0`）
 - [x] README 里包含安装命令（`dsh plugin --profile web add github:ODO-TECH/dsh-yukkuli`）
 - [x] 插件导出 `apply(ctx)`
 - [x] 仓库根目录有 `package.json`（声明了 `dsh.bundle.patch`）
