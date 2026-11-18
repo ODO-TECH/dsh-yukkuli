@@ -808,6 +808,7 @@ push 一次过（`0f05314..80fc1c5`）。读注册表要 `MSYS_NO_PATHCONV=1`，
 | LICENSE | 根 / plugin / core 三份的 `---` 追加段删除，只留标准 MIT；免责声明副本在根 README「许可」 |
 | Release | `POST /releases` 201（id 449466221，tag v0.3.0）；资产上传 201，下载回来逐字节一致。**LICENSE 删段后重 pack 替换过资产**：74352 B → **74052 B**（删旧资产 204 + 传新 201，现 id 761643017），离线 zip 也重打（456 文件） |
 | awesome PR | fork 202 → 等就绪 → contents API 201 放 `data/plugins/ODO-TECH__dsh-yukkuli.yml`（补了 `tarball:` 指 Release 资产）→ `POST /pulls` 201 = **#16451** open |
+| dsh-plugin.org | 提交 = 去 `dshplugin/dsh-plugin-hub` 开 Issue（**没有网站账号体系**，截图栏可选）。用户提供设置面板截图 → 入仓 `marketplace/screenshot-settings.png`（29171 B）→ raw URL 实测 200 且逐字节一致 → `POST /issues` 201 = **#825** open |
 
 年龄门槛（`created_at 2026-11-17T10:38:10Z`）那条检查**会自己重跑**，所以 PR 先提、到点自动变绿，
 不必干等 —— 之前「等 11-18 再提」的写法偏保守，已改。
@@ -820,5 +821,5 @@ awesome PR #16451 的 `check` 运行中（年龄门槛那条会自己重跑）�
 
 ### 还剩的
 
-awesome 维护者合并 #16451；dsh-plugin.org 网页表单（要用户本人账号与截图）；
+awesome 维护者合并 #16451；dsh-plugin.org 等刷新收录（#825 已提，初态 unconfirmed 属正常）；
 标签 `v0.3.0` 仍停在 `0ac3255`（其后都是文档/索引提交，代码相同；挪标签要 force-push，未做）。
