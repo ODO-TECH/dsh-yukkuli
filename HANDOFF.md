@@ -22,7 +22,7 @@
 | 端到端 | 会话结束一轮 → 合成 → `/pending` → 浏览器 `<audio>` 响，已通 |
 | 可移植性 | 源码内**零写死盘符路径**（有测试锁）；core 三层解析；SDK 默认 `~/yukkuri-sdk` |
 | 安装通道 | 本地目录 / GitHub / npm / 离线包 **四条都验证过**（§8.5） |
-| 已知阻塞 | `npm test` 在受限环境不可用（§5.2）；`dsh plugin add` 在受限环境跑不了 pnpm（§8.5 坑 15）；**npm 未发布**（本机 `npm whoami` = need auth）；仓库已 push，但 topic / description / LICENSE 归类还差仓库所有者操作 |
+| 已知阻塞 | `npm test` 在受限环境不可用（§5.2）；`dsh plugin add` 在受限环境跑不了 pnpm（§8.5 坑 15）；**npm 决定不发**（2026-11-18，免 npm 三路已落地，见 §6）；git push 需内联系统代理 `127.0.0.1:7890`（git 不继承 WinINET） |
 
 一句话：**功能完整，工程化补上了「装得走」这一段。** 下一步的重点是发版流程与 CI，不是加功能。
 
@@ -350,21 +350,22 @@ require('./src')         → OK，导出 12 个成员
 整个仓库**没有 `.git`**。`.gitignore` 和 `LICENSE` 这次已经写好了，
 但 `git init` 还得你自己来（交接时没动，见 §10）。
 
-### 待办 — npm 发布（包已收拾好，但没发）
+### 已决定不发 npm（2026-11-18 用户拍板）——免 npm 分发已落地
 
-**只发一个包**：仓库根 `package.json`（`dsh-yukkuri-tts` 0.3.0）。core 随包分发，
+**只存在一个可发布包**：仓库根 `package.json`（`dsh-yukkuri-tts` 0.3.0）。core 随包分发，
 `plugin/package.json` 与 `core/package.json` 都标了 `private: true`，是开发期清单，
-**别把它们发出去**（plugin 那份与根包同名，发出去会互相覆盖）。
+**任何时候别把它们发出去**（plugin 那份与根包同名，发出去会互相覆盖）。
 
-根清单已是可发布形态：`files` 白名单、`license: MIT`、`main: plugin/lib/index.js`、
-`engines.node >= 22`、`repository` / `homepage` / `bugs` 已填、四个运行依赖齐备。
-实测 `npm pack --dry-run` = **35 文件**（tarball 74.0 kB / 解包 193.9 kB）。
+根清单仍是可发布形态（`files` 白名单、`license: MIT`、`main: plugin/lib/index.js`、
+`engines.node >= 22`、`repository` / `homepage` / `bugs` 齐备），实测 `npm pack --dry-run` =
+**35 文件**。但用户决定不走 npm（「太麻烦了」），改走三条免 npm 的路，**都已落地**：
 
-发布前还差：
+1. **git 源市场索引**：`market/index.json` + GitHub Pages，
+   `https://odo-tech.github.io/dsh-yukkuli/market/index.json`（实测 200 / 零重定向）
+2. **Release 资产**：`v0.3.0/dsh-yukkuri-tts-0.3.0.tgz`（74052 B），awesome 条目的 `tarball:` 指它
+3. **awesome 收录 PR**：[#16451](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/16451)
 
-1. **`npm login` + `npm publish`**（在仓库根跑，或在 `dist/npm/dsh-yukkuri-tts/` 里跑）
-2. 本地先验一遍：`npm pack` → 临时目录 `npm i <tgz>` → 加载插件 + 真合成一次
-   （离线暂存树已按这个形态验过，见 §8.5）
+tarball 与离线 zip 留作免 npm / 离线安装用；装法见 `packaging/offline-install.md` 与根 README。
 
 ---
 
@@ -525,11 +526,11 @@ dist/
 ├── offline/
 │   └── dsh-yukkuri-tts/       456 文件 / 27.1 MB  ← 运行树 + 预装 node_modules + 安装.md
 ├── tarballs/
-│   └── dsh-yukkuri-tts-0.3.0.tgz       74.4 kB   ← npm publish 用（人工跑 npm pack 出）
+│   └── dsh-yukkuri-tts-0.3.0.tgz       74.1 kB   ← 免 npm 分发 / v0.3.0 Release 资产（人工跑 npm pack 出）
 ├── zip/
 │   └── dsh-yukkuri-tts-offline-0.3.0.zip  7.16 MB ← 离线分发（人工跑 bsdtar 出）
 ├── git-push/
-│   └── dsh-yukkuli/            repo/ 的拷贝 + .git ← **已 push**：main @ 0ac3255 + tag v0.3.0
+│   └── dsh-yukkuli/            repo/ 的拷贝 + .git ← **已 push**：main @ 54f43cc + tag v0.3.0（停在 0ac3255）
 ├── manifests/                 逐文件明细（每通道一份）
 └── MANIFEST.txt               汇总：位置 / 文件数 / 体积 / 装法
 ```

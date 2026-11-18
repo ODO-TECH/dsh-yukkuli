@@ -76,7 +76,7 @@ awesome 条目里的 `tarball:` 字段是另一条免 npm 的路（让卡片展�
 | license | 三份 `LICENSE`（根 / plugin / core）的 `---` 追加段**已删**，只留标准 MIT；免责声明副本在根 README「许可」 | 推送后复查 API `license.spdx_id` 应为 `MIT` |
 | 创建时间 | `2026-11-17T10:38:10Z` | 门槛在 **11-18 10:38Z** 到点；检查会自己重跑，PR 可先提 |
 | GitHub Pages | ✅ `has_pages: true`；索引网址 **200 / 零重定向**，返回字节与仓库文件逐字节一致 | 无 |
-| Release | ✅ `v0.3.0`（id 449466221）+ 资产 `dsh-yukkuri-tts-0.3.0.tgz`（74352 B，state uploaded），下载回来逐字节一致 | 无 |
+| Release | ✅ `v0.3.0`（id 449466221）+ 资产 `dsh-yukkuri-tts-0.3.0.tgz`（**74052 B**，state uploaded；LICENSE 删段后重 pack 并替换过资产，现 id 761643017），下载回来逐字节一致 | 无 |
 | awesome PR | ✅ [#16451](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/16451)（open，fork `ODO-TECH/awesome-dsh-plugin`） | 等维护者合并；年龄门槛到点自动变绿 |
 
 **2026-11-18 已执行完毕**（用会话环境里的 `GITHUB_PERSONAL_ACCESS_TOKEN`，命令文本只出现变量名）。

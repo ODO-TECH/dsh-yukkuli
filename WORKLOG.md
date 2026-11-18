@@ -806,11 +806,17 @@ push 一次过（`0f05314..80fc1c5`）。读注册表要 `MSYS_NO_PATHCONV=1`，
 | description | `PATCH /repos/…` 200，事实描述生效 |
 | topics | **PATCH 不吃 topics**（200 但仍是 `[]`）；改 `PUT /repos/…/topics` 200 → 5 个 topic |
 | LICENSE | 根 / plugin / core 三份的 `---` 追加段删除，只留标准 MIT；免责声明副本在根 README「许可」 |
-| Release | `POST /releases` 201（id 449466221，tag v0.3.0）；资产上传 201（74352 B，state uploaded），下载回来逐字节一致 |
+| Release | `POST /releases` 201（id 449466221，tag v0.3.0）；资产上传 201，下载回来逐字节一致。**LICENSE 删段后重 pack 替换过资产**：74352 B → **74052 B**（删旧资产 204 + 传新 201，现 id 761643017），离线 zip 也重打（456 文件） |
 | awesome PR | fork 202 → 等就绪 → contents API 201 放 `data/plugins/ODO-TECH__dsh-yukkuli.yml`（补了 `tarball:` 指 Release 资产）→ `POST /pulls` 201 = **#16451** open |
 
 年龄门槛（`created_at 2026-11-17T10:38:10Z`）那条检查**会自己重跑**，所以 PR 先提、到点自动变绿，
 不必干等 —— 之前「等 11-18 再提」的写法偏保守，已改。
+
+### 复核（都是真实返回，不是推断）
+
+`license.spdx_id = MIT`（删追加段 + push 后 API 复查）；topics 5 个；`pushed_at 2026-11-18T03:01:38Z`、
+main @ `54f43cc`；Release 资产下载 200 / 74052 B 与本地新 tgz 逐字节一致；离线 zip 重打后文件数仍 456；
+awesome PR #16451 的 `check` 运行中（年龄门槛那条会自己重跑）。
 
 ### 还剩的
 
