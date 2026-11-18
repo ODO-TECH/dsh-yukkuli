@@ -1,0 +1,2 @@
+# 这个空文件只是告诉 GitHub Pages：别用 Jekyll 处理本仓库，原样发布文件。
+# 市场索引 market/index.json 需要以 2xx 直接返回、不经重定向，静态直出最稳。

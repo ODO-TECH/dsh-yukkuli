@@ -71,6 +71,8 @@ const REPO_TREE = [
   'core/test',
   'core/docs',
   'marketplace',
+  'market', // DSH「发现」页用的索引（GitHub Pages 直出 market/index.json）
+  '.nojekyll', // 让 Pages 原样发布，不走 Jekyll
   'packaging',
   'output-chars', // README 引用的试听样本（6 个 wav，532 kB）
 ];

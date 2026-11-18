@@ -1,0 +1,60 @@
+{
+  "format": 1,
+  "title": {
+    "en": "ODO-TECH DSH plugins",
+    "zh": "ODO-TECH 的 DSH 插件"
+  },
+  "description": {
+    "en": "Local AquesTalk voice plugins for DeepSeek Harness.",
+    "zh": "本地 AquesTalk 语音插件（DeepSeek Harness）。"
+  },
+  "metadata": {
+    "categories": {
+      "voice": {
+        "title": {
+          "en": "Voice",
+          "zh": "语音"
+        }
+      }
+    }
+  },
+  "plugins": [
+    {
+      "name": "dsh-yukkuri-tts",
+      "title": {
+        "en": "Yukkuri TTS",
+        "zh": "油库里朗读"
+      },
+      "description": {
+        "en": "Reads assistant replies aloud locally through AquesTalk, with no network calls.",
+        "zh": "用 AquesTalk 在本地把助手的回复念出来，不联网，Web 与 TUI 两端都能出声。"
+      },
+      "author": "ODO-TECH",
+      "homepage": "https://github.com/ODO-TECH/dsh-yukkuli#readme",
+      "repository": {
+        "url": "https://github.com/ODO-TECH/dsh-yukkuli"
+      },
+      "metadata": {
+        "category": "voice",
+        "keywords": [
+          "tts",
+          "aquestalk",
+          "yukkuri",
+          "touhou",
+          "cordis"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.3.0",
+          "publishTimestamp": 1794920399,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/ODO-TECH/dsh-yukkuli",
+            "commit": "0f0531490bff2d2cf25ba850e0ae049cd85f5379"
+          }
+        }
+      ]
+    }
+  ]
+}
