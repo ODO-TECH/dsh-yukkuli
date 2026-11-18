@@ -30,22 +30,52 @@
 4. README 里的安装命令能照着跑通（我们写了四条途径，任意一条都行）；
 5. 描述只说事实，不要「最好用 / 革命性」这类营销词 —— 描述会被当作对代码的声明核对，
    写了某个命令或某个数字，代码里就得真有；
-6. **仓库创建满 1 天**（awesome 的 CI 自动查，用来过滤「PR 前几分钟才建仓」）；
+6. **仓库创建满 1 天**（awesome 的 CI 自动查，用来过滤「PR 前几分钟才建仓」）——
+   这条检查**会自己重跑**，所以 PR 可以先提，门槛到点自动变绿，不必干等；
 7. `category` 选贴合实际做的事 —— 本插件是 `voice`，不是 `tools`。
 
-**npm 不是前置条件**：没发 npm 也能被 dsh.so / dsh.works / awesome 收录，安装命令写
-`github:ODO-TECH/dsh-yukkuli` 即可。`dshmarket` 只吃 awesome 的 catalog，所以进了 awesome
-就等于进了市场。
+**npm 不是前置条件**：没发 npm 也能被 dsh.so / dsh.works / awesome 的**列表**收录，安装命令写
+`github:ODO-TECH/dsh-yukkuli` 即可。
 
-## 现在差什么（2026-11-17 push 之后复查）
+但有一处例外，2026-11-18 读他们源码实测：awesome 生成 **DSH 市场索引**的脚本
+（`scripts/lib/market-index.mjs`）只把**有 npm 包**的条目写进去 ——
+`if (!record?.npm) { skipped.noNpm++; continue; }`，注释写着「The GitHub-only half of the list
+cannot be expressed yet」，因为他们不记录 commit SHA。那是他们的数据缺字段，**不是 DSH 格式的限制**。
+所以「进了 awesome 就等于进了 DSH 市场」这句话对不发 npm 的插件**不成立**。
+不发 npm 又要进 DSH 市场，走下面这节自建索引。
+
+## DSH 自带的「发现」页：自建索引（本仓库已备好，不需要 npm）
+
+DSH **不内置任何索引源**。「发现」页读的是使用者自己添加的一个 `index.json` 网址。
+本仓库的 `market/index.json` 就是这份索引（format 1），已用 DSH 自带的
+`@deepseek-ai/dsh-plugin-market-index`（0.2.2-rc.3，与本机 dsh 同版本）`parseMarketIndex` 校验通过：
+
+- 版本 `0.3.0`，`source` 是 **git**：`{url, commit: 0f05314…}`（40 位小写 SHA）
+- 点「安装」时 DSH 实际执行的 spec = `git+https://github.com/ODO-TECH/dsh-yukkuli.git#0f0531490bff2d2cf25ba850e0ae049cd85f5379`
+- 托管：仓库开 GitHub Pages（Source = Deploy from a branch / main / `/(root)`），
+  网址 `https://odo-tech.github.io/dsh-yukkuli/market/index.json`；
+  根目录的 `.nojekyll` 让 Pages 原样直出，不走 Jekyll
+
+索引的硬规则（违反会被 DSH 整份拒绝）：UTF-8 JSON、**2xx 直接返回且不经重定向**、
+URL 不含用户名密码与 `#`、默认 ≤128 MiB；图标可内联 `data:`（≤32 KiB）或与 `icons/` 并排用相对路径。
+
+使用者那边两步：插件页 → 实验性插件 → 打开**自定义插件索引** → 出现「发现」标签页 →
+**添加索引源**填上面那个网址。索引源**属于当前 profile**，每个 profile 各加一次。
+
+awesome 条目里的 `tarball:` 字段是另一条免 npm 的路（让卡片展示预构建包而不是源码构建）：
+必须指向 **GitHub Release 资产**、`.tgz` / `.tar.gz` 结尾。本仓库的
+`dist/tarballs/dsh-yukkuri-tts-0.3.0.tgz` 就是它，只差建一个 Release 挂上去。
+
+## 现在差什么（2026-11-18 复查）
 
 | 项 | 现状 | 还要做的 |
 |---|---|---|
-| 仓库内容 | ✅ **已 push**：`main` @ `0ac3255`（93 文件）+ 标签 `v0.3.0`，`pushed_at 2026-11-17T12:54:38Z` | 无 |
+| 仓库内容 | `main` 已含 `market/index.json` 与 `.nojekyll`（**95 文件**）；标签 `v0.3.0` 仍停在 `0ac3255`（其后都是文档/索引提交，代码相同） | 推送后核对远端 `main` 与 `pushed_at` |
 | topics | `[]` | 仓库设置里加 `dsh-plugin`（或下面那条 API 命令） |
 | description | 仍是营销腔英文（"Hakurei-shrine-tier … heavily based"） | 换成下面的事实描述 |
 | license | API 报 **`NOASSERTION`** —— MIT 正文是标准的，但 `LICENSE` 末尾用 `---` 追加了 SDK/东方免责段，识别器因此不认 | 把那段挪走（README「许可」里已有副本）后重新识别成 MIT |
-| 创建时间 | `2026-11-17T10:38:10Z` | awesome 的 PR 要等 **11-18 10:38 之后**再提 |
+| 创建时间 | `2026-11-17T10:38:10Z` | 门槛在 **11-18 10:38Z** 到点；检查会自己重跑，PR 可先提 |
+| GitHub Pages | API `has_pages: false`（2026-11-18 复查） | 仓库 Settings → Pages：Source 保持 `Deploy from a branch`，Branch 选 `main` + `/(root)`，Save |
 
 一条命令把 topic 与 description 一起设掉（需要一个 `repo` 权限的令牌，Desktop 侧不允许程序读取 git 凭据）：
 
