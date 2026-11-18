@@ -768,3 +768,51 @@ To https://github.com/ODO-TECH/dsh-yukkuli.git
 | awesome PR | **今天提不了**：CI 查仓库创建满 1 天，`created_at` 是 `2026-11-17T10:38:10Z` → 最早 11-18 10:38Z 之后 |
 | dsh-plugin.org 收录 | 网页表单要用户本人账号，`marketplace/dsh-plugin.org-issue.md` 正文已备好 |
 | LICENSE 归类 | push 后 API 报 `license: NOASSERTION` —— MIT 正文是标准的，但末尾用 `---` 追加了 SDK/东方免责段，识别器因此不认。那段在 README「许可」里已有副本，删掉即可变 MIT，**属许可文本，等用户点头** |
+
+## 二十三、免 npm 上 DSH 市场 + 上架四件套（2026-11-18，用户「都按照你说的做好」）
+
+### 先纠正一个误判：不发 npm 也能进 DSH 市场
+
+DSH **不内置任何索引源**，「发现」页读的是使用者自己添加的 `index.json` 网址。
+format 1 的 `source` 有 `npm` 与 **`git`** 两种，git 只要 `{url, commit:40位小写SHA, path?}`，
+安装 spec = `git+<url>.git#<commit>`。之前「进市场必须发 npm」的说法只对 **awesome 那份索引**成立：
+他们 `scripts/lib/market-index.mjs` 里 `if (!record?.npm) { skipped.noNpm++; continue; }`，
+注释自承「The GitHub-only half of the list cannot be expressed yet」—— 是他们不记 commit SHA，
+不是 DSH 格式限制。用户拍板不发 npm 后走自建索引。
+
+### 索引与托管（已实测闭环）
+
+- `market/index.json`（1490 B）：版本 0.3.0，git 源 pin `0f0531490bff2d2cf25ba850e0ae049cd85f5379`
+- 用 DSH 自带 `@deepseek-ai/dsh-plugin-market-index` 0.2.2-rc.3 `parseMarketIndex` 校验通过
+- 托管 = 仓库 GitHub Pages（用户网页点的 Save：Deploy from a branch / main / `/(root)`），
+  根加 `.nojekyll` 防 Jekyll 处理；`pack.cjs` 的 github 通道白名单同步加 `market` 与 `.nojekyll`（95 文件）
+- 线上复核：`https://odo-tech.github.io/dsh-yukkuli/market/index.json` **200 / 零重定向 / 0.78 s**，
+  返回字节与仓库文件 `Buffer.equals` 为 true，再拿线上字节过一遍校验器仍通过
+
+### push 连失败两次的根因：git 不继承系统代理
+
+症状 `Recv failure: Connection was reset`、curl `info/refs` 000，但 `api.github.com` 直连正常 ——
+很容易误判成「GitHub 挂了」或「凭据坏了」。实测注册表
+`HKCU\…\Internet Settings`：`ProxyEnable=0x1`、`ProxyServer=127.0.0.1:7890`（浏览器走它所以网页正常）。
+git/curl 不读 WinINET。单条命令内联 `-c http.proxy=http://127.0.0.1:7890 -c https.proxy=…` 后 1.4 s 通、
+push 一次过（`0f05314..80fc1c5`）。读注册表要 `MSYS_NO_PATHCONV=1`，否则 `/v` 被 MSYS 转义报「无效语法」。
+**另一个坑**：后台命令末尾的 `echo PUSH_EXIT=$?` 会让任务整体 exit 0，第一次失败就是这样被掩掉的；
+判成功必须看输出里的 `PUSH_EXIT=` 加远端 head sha / `pushed_at`。
+
+### 四件套（REST，token 只以变量名出现在命令里）
+
+| 项 | 结果 |
+|---|---|
+| description | `PATCH /repos/…` 200，事实描述生效 |
+| topics | **PATCH 不吃 topics**（200 但仍是 `[]`）；改 `PUT /repos/…/topics` 200 → 5 个 topic |
+| LICENSE | 根 / plugin / core 三份的 `---` 追加段删除，只留标准 MIT；免责声明副本在根 README「许可」 |
+| Release | `POST /releases` 201（id 449466221，tag v0.3.0）；资产上传 201（74352 B，state uploaded），下载回来逐字节一致 |
+| awesome PR | fork 202 → 等就绪 → contents API 201 放 `data/plugins/ODO-TECH__dsh-yukkuli.yml`（补了 `tarball:` 指 Release 资产）→ `POST /pulls` 201 = **#16451** open |
+
+年龄门槛（`created_at 2026-11-17T10:38:10Z`）那条检查**会自己重跑**，所以 PR 先提、到点自动变绿，
+不必干等 —— 之前「等 11-18 再提」的写法偏保守，已改。
+
+### 还剩的
+
+awesome 维护者合并 #16451；dsh-plugin.org 网页表单（要用户本人账号与截图）；
+标签 `v0.3.0` 仍停在 `0ac3255`（其后都是文档/索引提交，代码相同；挪标签要 force-push，未做）。

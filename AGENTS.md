@@ -236,16 +236,16 @@ DSH 只接受这两个形状：
 1. ✅ **仓库已建好并 push** —— 在 `dist/git-push/dsh-yukkuli/`（`dist/github/repo/` 的**拷贝**，
    别把 `.git` 放进通道目录，`pack.cjs` 会清它们）里 `git init -b main` + 提交 + `v0.3.0` 标签；
    远端 `main` @ `0ac3255`（93 文件）、`pushed_at 2026-11-17T12:54:38Z`。
-   **还剩三件**：topic `dsh-plugin`、description 换成事实描述、`LICENSE` 末尾那段追加声明
-   （正文是标准 MIT，但追加段让 GitHub 报 `NOASSERTION`）—— 都要仓库主人的凭据或拍板，
-   现成命令见 [`marketplace/README.md`](marketplace/README.md)。
+   topic / description / LICENSE 追加段**已于 2026-11-18 处理完**（topics 走 `PUT /repos/…/topics`，
+   `PATCH` 不吃 topics；三份 LICENSE 只留标准 MIT）。DSH 市场索引 `market/index.json` 已随
+   GitHub Pages 上线并实测 200 / 零重定向。状态明细见 [`marketplace/README.md`](marketplace/README.md)。
 2. **`test:run` 脚本** —— 把逐文件直跑固化下来，让 CI 与本地对得上。
-3. **npm 发布** —— **只发仓库根那一个包**（`dsh-yukkuri-tts` 0.3.0，core 随包分发）。
-   白名单已定稿：`npm pack --dry-run` = **35 文件**（解包 193.9 kB；README / LICENSE 被 npm
-   强制带入，压不到 31）。tarball 已出：`dist/tarballs/dsh-yukkuri-tts-0.3.0.tgz`（74.4 kB）。
-   **卡在这台机器没登录 npm**（`npm whoami` = need auth，无 `~/.npmrc` / `NPM_TOKEN`）——
-   `npm adduser` 之后由人跑 `npm publish`；发之前先在临时目录 `npm i <tgz>` 装一遍再加载 + 真合成。
-   `plugin/` 与 `core/` 那两份清单是 `private`，**别发**。
+3. **npm 不发了**（用户 2026-11-18 拍板：「太麻烦了」）。免 npm 的三条路都已落地：
+   git 源市场索引（`market/index.json` + GitHub Pages）、Release 资产
+   `v0.3.0/dsh-yukkuri-tts-0.3.0.tgz`（35 文件 / 74352 B，awesome 条目的 `tarball:` 指它）、
+   awesome 收录 PR [#16451](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/16451)。
+   `dist/tarballs/` 里的 tgz 留作离线 / 免 npm 安装用。`plugin/` 与 `core/` 那两份清单是
+   `private`，**任何时候都别发**。
 4. ✅ **`repository` 字段** —— 三份 `package.json` 都已填（plugin / core 带 `directory`），
    根 README 的 `<这个仓库>` 占位也换成了真 URL。
 5. **`plugin/package-lock.json` 与 `core/package-lock.json`** —— 实测仍在漂移

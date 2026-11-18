@@ -19,12 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-本仓库不包含 AquesTalk SDK（AquesTalk10 / AquesTalk2 / AqKanji2Koe）的任何
-二进制或词典文件。这些组件由 eBike / 株式会社アクエスト 与 yukumo.net 发布，
-其使用条款与授权归其各自权利人所有，请自行取得并遵守。
-
-东方 Project 及相关角色的权利归上海アリス幻樂団 / ZUN 所有。本项目是非官方的
-同人工具，与上述各方均无关联。

@@ -71,13 +71,18 @@ awesome 条目里的 `tarball:` 字段是另一条免 npm 的路（让卡片展�
 | 项 | 现状 | 还要做的 |
 |---|---|---|
 | 仓库内容 | `main` 已含 `market/index.json` 与 `.nojekyll`（**95 文件**）；标签 `v0.3.0` 仍停在 `0ac3255`（其后都是文档/索引提交，代码相同） | 推送后核对远端 `main` 与 `pushed_at` |
-| topics | `[]` | 仓库设置里加 `dsh-plugin`（或下面那条 API 命令） |
-| description | 仍是营销腔英文（"Hakurei-shrine-tier … heavily based"） | 换成下面的事实描述 |
-| license | API 报 **`NOASSERTION`** —— MIT 正文是标准的，但 `LICENSE` 末尾用 `---` 追加了 SDK/东方免责段，识别器因此不认 | 把那段挪走（README「许可」里已有副本）后重新识别成 MIT |
+| topics | ✅ `["aquestalk","cordis","dsh-plugin","touhou","tts"]`（`PUT /repos/…/topics` 200） | 无 |
+| description | ✅ 事实描述（`PATCH /repos/…` 200） | 无 |
+| license | 三份 `LICENSE`（根 / plugin / core）的 `---` 追加段**已删**，只留标准 MIT；免责声明副本在根 README「许可」 | 推送后复查 API `license.spdx_id` 应为 `MIT` |
 | 创建时间 | `2026-11-17T10:38:10Z` | 门槛在 **11-18 10:38Z** 到点；检查会自己重跑，PR 可先提 |
-| GitHub Pages | API `has_pages: false`（2026-11-18 复查） | 仓库 Settings → Pages：Source 保持 `Deploy from a branch`，Branch 选 `main` + `/(root)`，Save |
+| GitHub Pages | ✅ `has_pages: true`；索引网址 **200 / 零重定向**，返回字节与仓库文件逐字节一致 | 无 |
+| Release | ✅ `v0.3.0`（id 449466221）+ 资产 `dsh-yukkuri-tts-0.3.0.tgz`（74352 B，state uploaded），下载回来逐字节一致 | 无 |
+| awesome PR | ✅ [#16451](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/16451)（open，fork `ODO-TECH/awesome-dsh-plugin`） | 等维护者合并；年龄门槛到点自动变绿 |
 
-一条命令把 topic 与 description 一起设掉（需要一个 `repo` 权限的令牌，Desktop 侧不允许程序读取 git 凭据）：
+**2026-11-18 已执行完毕**（用会话环境里的 `GITHUB_PERSONAL_ACCESS_TOKEN`，命令文本只出现变量名）。
+实测一个坑：**`PATCH /repos/…` 不接受 `topics`** —— 返回 200、description 生效，但 topics 仍是 `[]`。
+topic 必须走专用端点 `PUT /repos/<owner>/<repo>/topics`，正文 `{"names":[…]}`。
+下面这条 PATCH 只用来改 description（留着当模板）：
 
 ```bash
 curl -X PATCH https://api.github.com/repos/ODO-TECH/dsh-yukkuli \
