@@ -823,3 +823,93 @@ awesome PR #16451 的 `check` 运行中（年龄门槛那条会自己重跑）�
 
 awesome 维护者合并 #16451；dsh-plugin.org 等刷新收录（#825 已提，初态 unconfirmed 属正常）；
 标签 `v0.3.0` 仍停在 `0ac3255`（其后都是文档/索引提交，代码相同；挪标签要 force-push，未做）。
+
+## 二十四、SDK 默认根换了之后：静音、误判与自检（2026-11-18）
+
+### 症状与第一层误判
+
+用户 16:34 报「之前还好好的，怎么突然用不了了？好像是 SDK 的路径掉了」。
+第一反应容易落在「SDK 被删了」或「环境变量丢了」—— 两条都不成立：`D:\Documents\yukkuri-sdk` 里
+`AquesTalk.dll`（433152 B）/ `AqKanji2Koe.dll`（247808 B）/ `aqdic.bin`（9847992 B）都在，
+`YUKKURI_SDK_ROOT` 在 Process / User / Machine 三处**本来就没设过**（不是「丢了」）。
+
+真实链路是三件事叠在一起：
+
+1. `core/src/config.js` 在 **2026-11-17 18:45** 把默认根从写死的 `D:\Documents\yukkuri-sdk`
+   改成了 `~/yukkuri-sdk`（`path.join(os.homedir(), 'yukkuri-sdk')`），并故意不再写死任何一台机器的盘符。
+2. 本机 `C:\Users\ZJW\yukkuri-sdk` 不存在 → 默认根解析到一个空地址。
+3. profile 里装的是 **0.2.8 旧布局**（包里没有 `core/`），它的 `lib/index.js` 解析不到 sibling 的 core 时
+   **回落到一条写死的路径**指向源码 core。也就是说：**改源码 core 等于改线上行为，不用重装**。
+   11-17 18:45 之后任何一次重启，拾取的都是新默认值 → 全部合成失败。
+
+失败还特别安静：koffi 只抛 `Failed to load shared library: 找不到指定的模块。`，报错里没有 SDK 路径；
+插件的 pipeline `onError` 又只 `console.log` —— 用户侧唯一的感受就是「不响了」。
+
+次生问题：配置文件那时是一份默认值（`enabled:false`、`watch:[]`、`voice:reimu`），
+就算 SDK 修好，自动朗读也是关着的、声源也不是原来那个 cirno。
+
+### 止血：一个目录 junction
+
+不改代码也能先让声音回来 —— 把默认位置接到真 SDK 上：
+
+```
+mklink /J "C:\Users\ZJW\yukkuri-sdk" "D:\Documents\yukkuri-sdk"
+```
+
+`mklink /J` 是目录 junction，免管理员、可跨盘，Node 透明可见（对比仓库根那个 `yukkuri-sdk.lnk`：
+Windows 快捷方式对 Node 完全不透明，等于没用，已删）。修完 `describe()` 五项全 true，
+真合成 90428 B / RIFF / 16000 Hz / 41 ms。
+
+### 让它下次自己说清楚（代码改动）
+
+- `core/src/config.js`：新增 `DEFAULT_SDK_ROOT`；`describe()` 增 `sdkRootSource`（env / default）与
+  `candidates`（两个候选各自存在与否）；新增 `check()` → `{ok, code, sdkRoot, source, message}`，
+  `code` 三态 `ok` / `sdk-missing` / `sdk-not-ascii`，message 直接写「缺哪个 DLL」；
+  ok 时 message 是 `SDK 就位：<路径>`。
+- `plugin/lib/index.js`：配置增 `sdkRoot`（空 = 用 core 默认）；`ensureCore()` 前把 `cfg.sdkRoot` 注入 env；
+  **core 模块缓存按 SDK 根失效**（见下一节）；`/yukkuri status` 增一行 `SDK:`；新子命令
+  `/yukkuri sdk [status|<路径>|auto]`；`POST /config` 收 `sdkRoot`（非 ASCII / 不存在 / 缺 DLL → 400 且不落盘）；
+  合成失败且 SDK 不 ok 时**只提示一次**并带路径（不再每次轮询刷屏）。
+- `plugin/lib/client.js`：设置页加「SDK（合成引擎）」盒子 —— 状态 + 当前路径 + 输入框 + 「应用」。
+
+### 测试逼出来的一个真 bug：`require.cache` 的键是正斜杠还是反斜杠
+
+「换了 SDK 路径要不要清 core 缓存」这件事，第一版写成 `require.cache[prefix + '/config']`。
+Windows 上 `prefix` 来自 `fileURLToPath`，是反斜杠（`D:\…\core\src`），拼出来 `…\src/config`，
+而缓存的键是 `…\src\config.js` —— **永远匹配不上**，函数恒返回 true（表示「缓存还新鲜」）。
+症状很难看：自检报的是旧路径，而一个坏掉的 SDK 路径也能「合成成功」。
+修法：遍历 `Object.keys(require.cache)`，把键归一成反斜杠小写，找 `startsWith(base + '\\')` 且
+以 `\config.js` 结尾的条目，比它 `exports.SDK_ROOT` 与期望值 —— 不一致才清。
+
+同一轮还有一个同族 bug：`SDK_ROOT_SOURCE` 一开始是**调用时**读 `process.env`，
+导致「路径按 env 解析、来源却说是 default」。改成在 `require` 那一刻定死（测试直接抓到 `'default' !== 'env'`）。
+
+### 部署新坑：pnpm 12 不是 `onlyBuiltDependencies` 而是 `allowBuilds`
+
+`dsh plugin add` 首次以 `ERR_PNPM_IGNORED_BUILDS` / `Ignored build scripts: koffi@3.3.8` 退出。
+**注意：退出码是 1，但包已经装进去了**（package.json 也写了依赖），别被这个码骗去回滚。
+pnpm 11+ 把审批字段换成了 `pnpm-workspace.yaml` 里的 `allowBuilds`（映射，不是数组）：
+
+```yaml
+allowBuilds:
+  koffi: false
+```
+
+koffi 自带各平台预编译二进制，不需要重建；写 `true` 反而会去跑 cnoke 编译。两个 profile 都写后重跑，
+web 1.4 s / dsh-tui 782 ms，均 exit 0。
+
+### 实测（装完那一份，不是源码）
+
+- 两个 profile 的 `require(<base>/koffi)` 正常；装好的 core `describe()` → 默认根、`source=default`、
+  `aqtk10/aqtk2/aqtk2Phont/aqk2k/dic` 全 true；`synthe('安装验证')` → 37468 B / RIFF / 16000 Hz。
+- 装好的插件（web profile）+ 假 ctx（`YUKKURI_MUTE=1`、临时配置）：10 条路由齐全；
+  `/yukkuri sdk` → success（`✓ C:\Users\ZJW\yukkuri-sdk / 来源: 默认位置 ~/yukkuri-sdk / 状态: ok`）；
+  `/state.sdk` → `{ok:true, code:'ok', …}`；`POST /say` → 200、`{ok:true, id:'1', ms:83}`。
+- 回归：plugin 24 文件 / 119 例、core 15 文件 / 90 例，**逐个文件退出码 0**（`YUKKURI_MUTE=1`）。
+
+### 这一轮留下的
+
+- 本机配置恢复为 `enabled:true / voice:cirno / watch:[] / sdkRoot:""`；watch 空是因为旧 id 属于别的工作区，
+  需要在新会话里 `/yukkuri on` 绑一次。
+- **运行中的 DSH 必须重启**（它 16:09 就起来了，加载的还是 0.2.8 与旧的 core 缓存）。
+- `dist/` 与 `market/index.json` 仍指 0.3.0；这一版是 0.3.1，重打包属于发布动作，等拍板。

@@ -1,6 +1,6 @@
 {
   "name": "dsh-yukkuri-tts",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "DSH 油库里朗读插件的开发清单（跑测试用）。对外发布的是仓库根那份同名 package.json —— core 随包分发，不单独装。",
   "type": "module",

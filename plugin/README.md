@@ -325,6 +325,12 @@ Error: spawn EPERM
 ### 2. AquesTalk SDK —— 路径不能含非 ASCII
 
 默认在 `~/yukkuri-sdk`（即 `%USERPROFILE%\yukkuri-sdk`），可用 `YUKKURI_SDK_ROOT` 覆盖。
+也可以不碰环境变量：插件配置里有一项 `sdkRoot`，`/yukkuri sdk <路径>` 与设置页的
+「SDK（合成引擎）」盒子都会校验后写进去（非 ASCII / 目录不存在 / 缺 DLL 都会被拒）。
+
+**不响了先看这一条**：`/yukkuri sdk` 打出自检结果（路径 + 来源 + 缺哪个 DLL）。
+从 0.3.1 起合成失败会**只提示一次**并把路径写进日志，不再静默。
+注意 SDK 根是在 `require` 那一刻定下来的 —— 改完 env 或配置都要**重启 DSH**。
 
 > ⚠ **路径必须是纯 ASCII。** AqKanji2Koe 用 ANSI 读词典路径，中文路径会让
 > `AqKanji2Koe_Create` 返回 NULL，报「システム辞書(aqdic.bin)が不正、または

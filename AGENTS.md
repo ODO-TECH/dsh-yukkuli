@@ -39,10 +39,10 @@ Error: spawn EPERM
 逐文件直跑：
 
 ```powershell
-# plugin —— 23 文件 / 111 例
+# plugin —— 24 文件 / 119 例
 cd plugin; Get-ChildItem test\*.test.cjs | ForEach-Object { node $_.FullName }; cd ..
 
-# core —— 14 文件 / 84 例
+# core —— 15 文件 / 90 例
 cd core; Get-ChildItem test\*.test.js | ForEach-Object { node $_.FullName }; cd ..
 ```
 
@@ -56,8 +56,10 @@ cd core; Get-ChildItem test\*.test.js | ForEach-Object { node $_.FullName }; cd 
 `synthe-cache` / `wav`。其余 7 个（`cache` / `extract` / `numbers` / `pitch` /
 `remote-contract` / `segment` / `zh2jp`）不碰 DLL，换机器时先用它们验环境。
 
-SDK 本机的真身在 **`D:\Documents\yukkuri-sdk`**（纯 ASCII）。默认的 `~/yukkuri-sdk` 不存在，
-仓库里的 `sdk/` 又在中文路径下 —— 跑真合成前设 `YUKKURI_SDK_ROOT=D:/Documents/yukkuri-sdk`。
+SDK 本机的真身在 **`D:\Documents\yukkuri-sdk`**（纯 ASCII）。默认的 `~/yukkuri-sdk` 原本不存在，
+2026-11-18 建了一个目录 junction 指过去（`C:\Users\ZJW\yukkuri-sdk` → 上面那个），默认值现在能用了；
+换台机器就重建同样的 junction，或设 `YUKKURI_SDK_ROOT`。仓库里的 `sdk/` 在中文路径下，只能当参考副本。
+不响时先跑 `/yukkuri sdk` 看自检（路径 + 来源 + 缺哪个 DLL）。
 
 ### 还有两个会静默失败的文件 API（2026-11-17 实测）
 
@@ -76,8 +78,8 @@ SDK 本机的真身在 **`D:\Documents\yukkuri-sdk`**（纯 ASCII）。默认的
 
 ## 提交前自检
 
-1. plugin 23 个文件逐个退出码 0
-2. core 14 个文件逐个退出码 0
+1. plugin 24 个文件逐个退出码 0
+2. core 15 个文件逐个退出码 0
 3. `cd core; node demo.cjs` 能出 8 个 wav（需要 SDK 就位）
 4. 动过 `plugin/lib/client.js` 的话，`ui-style.test.cjs` 必须仍然全绿（它锁配色变量）
 
@@ -229,6 +231,11 @@ DSH 只接受这两个形状：
 | `YUKKURI_MUTE` | 设 `1` 时 TUI 播放器不真出声 | **跑测试前必须设** |
 | `YUKKURI_ENGINE` / `YUKKURI_ENDPOINT` | core 的引擎选择 | `local`（默认）/ `remote` |
 
+> SDK 根也可以不设 env，直接改配置里的 `sdkRoot`（`/yukkuri sdk <路径>` 或设置页会写）。
+> 两条路都只在**重启后**生效：core 在 `require` 那一刻就把 `SDK_ROOT` 定死了，
+> 换路径必须清模块缓存 —— 插件已经会在 env/配置变化时自己清（`coreModulesFresh`），
+> 但那只覆盖插件进程内的重载，最稳的仍是重启。
+
 ---
 
 ## 当前最该做的事（按优先级）
@@ -287,4 +294,4 @@ dsh plugin --profile web add "file:<仓库绝对路径>"
   `marketplace/README.md`、本文、`plugin/README.md` —— **别往根 README 堆**。
 - 改了测试数量、默认路径、环境变量，凡有这些数字的文档都要一起改（本文 / `HANDOFF.md` /
   `plugin/README.md` / `core/README.md`；根 README 刻意不带这些数）。
-  现在的数是：plugin 23 文件 / 111 例，core 14 文件 / 84 例。
+  现在的数是：plugin 24 文件 / 119 例，core 15 文件 / 90 例。

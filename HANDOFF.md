@@ -4,7 +4,7 @@
 > 配套文档：用法看 [`plugin/README.md`](plugin/README.md)，来历看 [`WORKLOG.md`](WORKLOG.md)，
 > 自动执行的硬规矩看 [`AGENTS.md`](AGENTS.md)，合成核心看 [`core/README.md`](core/README.md)。
 
-**版本**：插件 0.3.0 / core 1.1.0 　**快照时间**：2026-11-17 　**验证环境**：Windows 10 19041 / Node v24.13.0 / DSH 0.2.2-rc.1
+**版本**：插件 0.3.1 / core 1.1.0 　**快照时间**：2026-11-17 　**验证环境**：Windows 10 19041 / Node v24.13.0 / DSH 0.2.2-rc.1
 **许可**：MIT 　**发布形态**：**一个 npm 包** `dsh-yukkuri-tts`（core 随包分发，不单独发）；`github:` 通道装的是同一份仓库根清单
 **仓库**：https://github.com/ODO-TECH/dsh-yukkuli（仓库名与 npm 包名**不一致**：仓库叫 dsh-yukkuli，包叫 dsh-yukkuri-tts）
 
@@ -16,8 +16,8 @@
 
 | 项 | 实测结果 |
 |---|---|
-| 插件测试 | 23 个文件 / **111 例全通过**（逐文件直跑，`YUKKURI_MUTE=1`） |
-| core 测试 | 14 个文件 / **84 例全通过** |
+| 插件测试 | 24 个文件 / **119 例全通过**（逐文件直跑，`YUKKURI_MUTE=1`） |
+| core 测试 | 15 个文件 / **90 例全通过** |
 | 真实合成 | `synthe('今天天气不错', {voice:'cirno'})` → **70368 字节 WAV**，SDK 正常 |
 | 端到端 | 会话结束一轮 → 合成 → `/pending` → 浏览器 `<audio>` 响，已通 |
 | 可移植性 | 源码内**零写死盘符路径**（有测试锁）；core 三层解析；SDK 默认 `~/yukkuri-sdk` |
@@ -34,7 +34,7 @@
 油库里语音/
 ├── package.json            ← **唯一对外发布的清单**（npm 与 github: 通道都用它）
 ├── plugin/                 ← DSH 插件（本次交付主体）
-│   ├── package.json        0.3.0，ESM，**private**：开发清单，只为跑测试
+│   ├── package.json        0.3.1，ESM，**private**：开发清单，只为跑测试
 │   ├── cordis.patch.yml    4 行，把插件挂进 DSH 的 bundle
 │   ├── lib/index.js        宿主半边：路由 + 命令 + 轮次幂等 + 段队列
 │   ├── lib/client.js       Web 客户端：播放器 + 设置页 + 单例
@@ -43,7 +43,7 @@
 │   ├── lib/pipeline.cjs    文本 → extract → segment → synth
 │   ├── lib/poller.cjs      自带 setInterval 的轮询器
 │   ├── lib/player-tui.cjs  TUI：临时 WAV → spawn mpv（PATH 里找） → 播完删
-│   ├── test/               23 个 .test.cjs，111 例
+│   ├── test/               24 个 .test.cjs，119 例
 │   └── README.md           用法文档
 ├── core/                   ← 合成核心 yukkuri-core（CommonJS）
 │   ├── package.json        1.1.0，**private**：不单独发 npm，作用是声明 type=commonjs
@@ -53,7 +53,7 @@
 │   ├── src/codec/          aqk2k.js（汉字→假名） / aqtk1.js（WASM） / aqtk2.js
 │   ├── src/text/           extract.js（剥 Markdown） / segment.js（按假名切段）
 │   ├── src/                numbers.js / zh2jp.js / presets.js / characters.js / cache.js / wav.js
-│   ├── test/               14 个 .test.js，84 例
+│   ├── test/               15 个 .test.js，90 例
 │   └── README.md           接口、角色表、两个大坑
 ├── output-chars/           6 个角色的试听样音（cirno/tenshi/patchouli/marisa/reimu/patchouli_bass）
 │                           ← §4.2 里每个调音决定的**听感证据**；由 `core/demo-chars.cjs` 生成
@@ -82,7 +82,7 @@ Error: Cannot find module 'react'            ← plugin/test（5 个文件要它
 [油库里] 整轮合成失败: Cannot find module 'pinyin-pro'   ← deliver-once.test（它会真跑一次合成）
 ```
 
-**装完就全绿**（已实测：解包 → 安装 → 插件 23 文件 / 111 例 + core 14 文件 / 84 例全通过，
+**装完就全绿**（已实测：解包 → 安装 → 插件 24 文件 / 119 例 + core 15 文件 / 90 例全通过，
 且真实合成出 70368 字节 WAV）。
 
 ```powershell
@@ -138,13 +138,16 @@ YUKKURI_SDK_ROOT=D:\Documents\yukkuri-sdk            →  成功，70368 字节 
 迁移到别的机器时，**把 SDK 放在一个纯英文路径下**，别放进项目目录。
 
 > 代码里的默认值已经是 `~/yukkuri-sdk` 了（不再写死某台机器的盘符）。
-> 本机现状是 SDK 在 `D:\Documents\yukkuri-sdk`，所以要**显式设一次**：
+> 本机 2026-11-18 已用一个**目录 junction** 把它接上，不需要环境变量：
 >
-> ```powershell
-> setx YUKKURI_SDK_ROOT "D:\Documents\yukkuri-sdk"
+> ```
+> C:\Users\ZJW\yukkuri-sdk  →  D:\Documents\yukkuri-sdk
 > ```
 >
-> 设完要新开一个终端 / 重启 DSH 才生效。
+> 换机器时可以照抄这个做法（`mklink /J` 免管理员、可跨盘），也可以设
+> `YUKKURI_SDK_ROOT`，或者在插件里 `/yukkuri sdk <路径>`（设置页同款输入框）。
+> 三条路都**必须重启 DSH**：core 在 `require` 那一刻就把路径定死了。
+> 不确定现在是哪一种：`/yukkuri status` 有一行 `SDK:`，`/yukkuri sdk` 会给自检。
 
 ---
 
@@ -352,7 +355,7 @@ require('./src')         → OK，导出 12 个成员
 
 ### 已决定不发 npm（2026-11-18 用户拍板）——免 npm 分发已落地
 
-**只存在一个可发布包**：仓库根 `package.json`（`dsh-yukkuri-tts` 0.3.0）。core 随包分发，
+**只存在一个可发布包**：仓库根 `package.json`（`dsh-yukkuri-tts` 0.3.1）。core 随包分发，
 `plugin/package.json` 与 `core/package.json` 都标了 `private: true`，是开发期清单，
 **任何时候别把它们发出去**（plugin 那份与根包同名，发出去会互相覆盖）。
 
@@ -384,17 +387,30 @@ tarball 与离线 zip 留作免 npm / 离线安装用；装法见 `packaging/off
 
 `profiles\web\node_modules\dsh-yukkuri-tts` 是一个**实体目录**（`LinkType` 为空，不是 junction）。
 
-**注意：这台机器上 profile 里装的还是 2026-11-14 那版快照（0.2.2）**，本次交付的
-0.3.0 还没装进去 —— 所以现在运行中的插件仍是带硬编码路径的旧版本。
-要让新版生效，跑下面那条命令再重启（新版 23 个测试文件，旧快照只有 17 个，
-可以拿来判断装没装新）。
+**2026-11-18 16:33 已重装为 0.3.1**（从仓库根装的，两个 profile 的依赖都是
+`file:D:/Users Data/Desktop/油库里语音`，包内带 `core/` 与新的 SDK 自检）。
+装完实测：10 条路由齐全、`/yukkuri sdk` 返回 ✓、`/say` 合成 200 / 83ms。
+之后的改动仍要重装才生效（新版 24 个测试文件，旧快照只有 23 个）。
 
 **结论：改源码不会自动生效，必须重装 + 重启 DSH。**
 
 ```powershell
 dsh plugin --profile web add "file:D:/Users Data/Desktop/油库里语音"
-# 然后重启 dsh web
+dsh plugin --profile dsh-tui add "file:D:/Users Data/Desktop/油库里语音"
+# 然后重启 dsh web / dsh-tui
 ```
+
+> **pnpm 12 的构建审批**：这个包依赖 `koffi`，它有 postinstall。pnpm 11+ 要求把审批
+> 写进 profile 的 `pnpm-workspace.yaml`，否则 `plugin add` 以
+> `ERR_PNPM_IGNORED_BUILDS` 退出（**退出码 1，但包其实已经装进去了**）。
+> 本机两个 profile 已写死：
+>
+> ```yaml
+> allowBuilds:
+>   koffi: false
+> ```
+>
+> koffi 自带各平台预编译二进制，不需要重建；设 `true` 反而会去跑 cnoke 编译。
 
 > 装**仓库根**，不是 `/plugin`：合并成单包后，运行依赖（koffi / pinyin-pro / …）声明在
 > 根清单里，`plugin/package.json` 只是开发清单。上面那份 profile 快照是合并前从

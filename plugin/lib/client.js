@@ -216,6 +216,9 @@ window.__ModuleLoader__.load({
       const [msg, setMsg] = React.useState('');
       // 诊断：插件被加载了几次、触发了几次、挡掉几次重复
       const [diag, setDiag] = React.useState(null);
+      // SDK 自检：合成不出声时，用户第一眼要能看到「路径对不对」
+      const [sdk, setSdk] = React.useState(null);
+      const [sdkPath, setSdkPath] = React.useState('');
       const [testText, setTestText] = React.useState('ゆっくりしていってね。');
 
       const flash = (t) => {
@@ -225,7 +228,11 @@ window.__ModuleLoader__.load({
 
       const load = async () => {
         const st = await get('/state');
-        if (st && st.ok) setCfg(st.cfg);
+        if (st && st.ok) {
+          setCfg(st.cfg);
+          setSdk(st.sdk || null);
+          setSdkPath(st.cfg.sdkRoot || '');
+        }
         const ss = await get('/sessions');
         if (ss && ss.ok) setSessions(ss.sessions || []);
         const sg = await get('/stats');
@@ -261,6 +268,19 @@ window.__ModuleLoader__.load({
           flash('试听中…');
         } else {
           flash('合成失败: ' + ((r && r.error) || '未知'));
+        }
+      };
+
+      // SDK 路径：写配置文件 + 立刻注入 env + 重载 core，服务端会回新的自检结果
+      const applySdk = async () => {
+        const r = await post('/config', { sdkRoot: sdkPath.trim() });
+        if (r && r.ok) {
+          setCfg(r.cfg);
+          setSdk(r.sdk || null);
+          flash('SDK 已更新');
+          load();
+        } else {
+          flash('SDK 设置失败: ' + ((r && r.error) || '未知'));
         }
       };
 
@@ -462,6 +482,34 @@ window.__ModuleLoader__.load({
             React.createElement('input', { style: inp, value: testText, onChange: (e) => setTestText(e.target.value), placeholder: '试听文本' }),
             React.createElement('button', { style: btn, onClick: trySay }, '试听'),
           ),
+        ),
+
+        // SDK：默认值是 ~/yukkuri-sdk（不写死盘符），本机装在别处时默认值就是错的，
+        // 而失败现场只有一句「找不到指定的模块」。所以把路径与自检摆到界面上。
+        React.createElement('div', { style: box },
+          React.createElement('div', { style: sectionTitle }, 'SDK（合成引擎）'),
+          React.createElement('div', {
+            style: {
+              fontSize: 12,
+              marginTop: 4,
+              lineHeight: 1.5,
+              color: sdk && !sdk.ok ? '#e0a030' : V.labelPrimary,
+            },
+          },
+            sdk
+              ? (sdk.ok ? '✓ ' : '✗ ') + (sdk.sdkRoot || '(未设置)') + (sdk.ok ? '' : ' —— ' + (sdk.message || sdk.code))
+              : '读取中…'),
+          React.createElement('div', { style: row },
+            React.createElement('input', {
+              style: inp,
+              value: sdkPath,
+              placeholder: '留空 = 默认 ~/yukkuri-sdk',
+              onChange: (e) => setSdkPath(e.target.value),
+            }),
+            React.createElement('button', { style: btn, onClick: applySdk }, '应用'),
+          ),
+          React.createElement('div', { style: { fontSize: 11, opacity: 0.55, marginTop: 6, lineHeight: 1.5 } },
+            '路径必须是纯 ASCII：AqKanji2Koe 用 ANSI 读词典，中文路径会让它读不出词典。'),
         ),
 
         React.createElement('div', { style: box },

@@ -5,7 +5,7 @@
 // 监听/筛选那套照 dsh-tts-bridge 的做法（同一套 DSH 验证过），
 // 但发声换成本地 AQTK10：不依赖浏览器、不依赖任何网页端。
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -100,6 +100,11 @@ const DEFAULTS = {
   // 挂在 127.0.0.1 的随机端口上），所以「有没有 webServer」分不出 TUI 和 Web。
   // 分不出来的后果就是 TUI 里一句不响 —— 音频全进了 /pending，而没人来取。
   mode: 'auto',
+  // SDK 根目录。空 = 用 core 的默认（~/yukkuri-sdk）。
+  // 存在的理由：默认值不写死盘符（换机器才对），但本机 SDK 常在别处，
+  // 而「默认值指向空气」的现场只有一句 koffi 的「找不到指定的模块」——
+  // 不提路径、不提 SDK，用户只感到「不响了」。
+  sdkRoot: '',
 };
 
 const MODES = ['auto', 'tui', 'web'];
@@ -178,8 +183,131 @@ export function apply(ctx) {
   let pipeline = null;
   let wavSeconds = (buf) => (buf && buf.length > 44 ? (buf.length - 44) / 2 / 16000 : 0);
 
+
+  // ---------- SDK 路径 ----------
+  //
+  // 两个硬事实决定了这段代码的形状：
+  //   ① core 在 require 的那一刻就把 SDK_ROOT 算好并缓存，之后再改 env 没用
+  //      → 必须在 require 之前注入，换路径时必须清 require 缓存；
+  //   ② 默认值是 ~/yukkuri-sdk（刻意不写死盘符），本机放在别处时它就是错的
+  //      → 失败必须翻译成「哪个路径、缺什么、下一步做什么」。
+  const envSdkRootAtStart = process.env.YUKKURI_SDK_ROOT || '';
+  let sdkEnvOwned = false;
+  let sdkWarned = false;
+
+  /** 配置里的 sdkRoot 注入 env。env 永远最高优先级，便于临时覆盖。 */
+  function applySdkEnv() {
+    if (cfg.sdkRoot && !process.env.YUKKURI_SDK_ROOT) {
+      process.env.YUKKURI_SDK_ROOT = cfg.sdkRoot;
+      sdkEnvOwned = true;
+    }
+  }
+
+  /** 这一次应该用的 SDK 根：env 优先，其次 core 的默认（~/yukkuri-sdk）。 */
+  function expectedSdkRoot() {
+    return process.env.YUKKURI_SDK_ROOT || join(homedir(), 'yukkuri-sdk');
+  }
+
+  function clearCoreCache(prefix) {
+    for (const key of Object.keys(require.cache)) {
+      if (key.startsWith(prefix)) delete require.cache[key];
+    }
+  }
+
+  /**
+   * 模块缓存里的 core 用的还是不是这一次的 SDK 根。
+   *
+   * 为什么必须查：SDK_ROOT 是 require 那一刻算的，而 require 缓存是进程级的。
+   * 换过 env（或换过 config 里的 sdkRoot）之后，如果不清，自检会说旧路径、
+   * 合成会去找旧 SDK —— 表现就是「配置改了，但一点变化都没有」。
+   */
+  function coreModulesFresh(prefix) {
+    // require.cache 的键是 require.resolve 之后的绝对路径（Windows 上是反斜杠 +
+    // 小写盘符归一），而 prefix 可能是 YUKKURI_CORE_PATH 里手写的正斜杠路径。
+    // 直接拿 'prefix + "/config"' 去查是查不到的 —— 那样这个函数会恒返回 true，
+    // 表现就是「换了 SDK 但自检还说旧路径」。所以统一归一后再遍历。
+    const norm = (p) => String(p).replace(/\//g, '\\').replace(/\\+$/, '').toLowerCase();
+    const base = norm(prefix) + '\\';
+    const want = String(expectedSdkRoot()).toLowerCase();
+    for (const key of Object.keys(require.cache)) {
+      const file = norm(key);
+      if (!file.startsWith(base)) continue;
+      if (!/\\config\.js$/.test(file)) continue;
+      const exp = require.cache[key].exports;
+      if (exp && exp.SDK_ROOT) return String(exp.SDK_ROOT).toLowerCase() === want;
+    }
+    return true;
+  }
+
+  function coreConfigMod() {
+    applySdkEnv();
+    const resolved = resolveCorePath({
+      siblingBase: fileURLToPath(new URL('../../core/src', import.meta.url)),
+      resolveModule: (id) => require.resolve(id),
+    });
+    if (!coreModulesFresh(resolved.path)) clearCoreCache(resolved.path);
+    return { mod: require(resolved.path + '/config'), path: resolved.path };
+  }
+
+  /** SDK 自检。core 自己都加载不了时也要返回同一种形状，不能让 status 抛异常。 */
+  function sdkStatus() {
+    try {
+      return coreConfigMod().mod.check();
+    } catch (err) {
+      return {
+        ok: false,
+        code: 'core-missing',
+        sdkRoot: cfg.sdkRoot || '',
+        source: cfg.sdkRoot ? 'config' : 'default',
+        message: 'core 没加载成功：' + (err && err.message),
+      };
+    }
+  }
+
+  /** 用户给的 SDK 目录先过一遍，别等合成时才炸。返回错误文本或 null。 */
+  function validateSdkDir(dir) {
+    if (!/^[\x20-\x7E]*$/.test(dir)) return '路径含非 ASCII 字符，AqKanji2Koe 会读不出词典';
+    let st = null;
+    try { st = statSync(dir); } catch { return '目录不存在: ' + dir; }
+    if (!st.isDirectory()) return '不是目录: ' + dir;
+    if (!existsSync(join(dir, 'aqtk10_win', 'lib64', 'AquesTalk.dll'))) {
+      return '这个目录里没有 aqtk10_win/lib64/AquesTalk.dll';
+    }
+    if (!existsSync(join(dir, 'aqk2k_win', 'lib64', 'AqKanji2Koe.dll'))) {
+      return '这个目录里没有 aqk2k_win/lib64/AqKanji2Koe.dll';
+    }
+    return null;
+  }
+
+  /** 换 SDK 后清掉 core 的模块缓存，否则新 env 不会生效。 */
+  function reloadCore() {
+    try {
+      const prefix = resolveCorePath({
+        siblingBase: fileURLToPath(new URL('../../core/src', import.meta.url)),
+        resolveModule: (id) => require.resolve(id),
+      }).path;
+      clearCoreCache(prefix);
+    } catch {}
+    coreMod = null;
+    pipeline = null;
+    wavSeconds = (buf) => (buf && buf.length > 44 ? (buf.length - 44) / 2 / 16000 : 0);
+  }
+
+  /** 合成失败时先问 SDK 在不在：不在就只提示一次，并带上路径与动作。 */
+  function reportSynthError(err, info) {
+    const st = sdkStatus();
+    if (!st.ok) {
+      if (sdkWarned) return;
+      sdkWarned = true;
+      say('合成失败：' + st.message);
+      say('  这条只提示一次。修好后用 /yukkuri say 测试 试一句，或 /yukkuri sdk 看自检。');
+      return;
+    }
+    say('合成失败 [' + JSON.stringify(info) + ']: ' + (err && err.message));
+  }
+
   function ensureCore() {
-    if (coreMod) return coreMod;
+    applySdkEnv();
 
     // core 路径：环境变量 > 同仓库的 ../core/src > node_modules/yukkuri-core
     // 三条都不通就抛出带候选清单的错误 —— 这里没有写死的本机路径兜底，
@@ -189,6 +317,15 @@ export function apply(ctx) {
       resolveModule: (id) => require.resolve(id),
     });
     const corePath = resolved.path;
+
+    // SDK 换过之后缓存里的 core 还指着旧路径：清掉再加载
+    if (!coreModulesFresh(corePath)) {
+      clearCoreCache(corePath);
+      coreMod = null;
+      pipeline = null;
+    }
+    if (coreMod) return coreMod;
+
     coreMod = require(corePath);
 
     // 采样率不是固定的（F3 声库 fsc=148 → 23680Hz），所以要读 WAV 头
@@ -202,7 +339,7 @@ export function apply(ctx) {
       synth: coreMod.synthe,
       extract: require(corePath + '/text/extract').extract,
       segment: require(corePath + '/text/segment').segment,
-      onError: (err, info) => say('合成失败 [' + JSON.stringify(info) + ']: ' + (err && err.message)),
+      onError: reportSynthError,
     });
     say('core 已加载（' + resolved.source + '）: ' + corePath);
     return coreMod;
@@ -470,6 +607,8 @@ export function apply(ctx) {
       // 声音往哪送（诊断 TUI 不响时先看这个）
       mode: cfg.mode,
       deliver: deliverMode(),
+      // SDK 自检：Web 设置页要显示「能不能合成」，而不是等用户点了播放才发现没声
+      sdk: sdkStatus(),
     });
   });
 
@@ -593,6 +732,26 @@ export function apply(ctx) {
     for (const k of ['enabled', 'voice', 'emotion', 'maxKana', 'intervalMs', 'keepSegments']) {
       if (body[k] !== undefined) cfg[k] = body[k];
     }
+    if (body.sdkRoot !== undefined) {
+      const want = String(body.sdkRoot || '').trim();
+      if (!want) {
+        cfg.sdkRoot = '';
+        if (sdkEnvOwned) {
+          if (envSdkRootAtStart) process.env.YUKKURI_SDK_ROOT = envSdkRootAtStart;
+          else delete process.env.YUKKURI_SDK_ROOT;
+          sdkEnvOwned = false;
+        }
+        reloadCore();
+      } else {
+        const bad = validateSdkDir(want);
+        if (bad) return reply(res, 400, { ok: false, error: 'SDK 路径不可用：' + bad });
+        cfg.sdkRoot = want;
+        process.env.YUKKURI_SDK_ROOT = want;
+        sdkEnvOwned = true;
+        sdkWarned = false;
+        reloadCore();
+      }
+    }
     if (Array.isArray(body.watch)) {
       // 名单变了：忘掉旧游标，避免把「没在听」期间的话补念出来
       cfg.watch = body.watch.map(String);
@@ -604,7 +763,7 @@ export function apply(ctx) {
 
     saveCfg(cfg);
     say('配置已更新: 监听 ' + cfg.watch.length + ' 个会话，声源 ' + cfg.voice);
-    reply(res, 200, { ok: true, cfg });
+    reply(res, 200, { ok: true, cfg, sdk: sdkStatus() });
   });
 
   route(P + '/sessions', async (req, res) => {
@@ -836,9 +995,59 @@ export function apply(ctx) {
         '  声源/情绪: ' + cfg.voice + ' / ' + cfg.emotion,
         '  出声方式: ' + cfg.mode + '（现在走 ' + deliverMode() + '）',
         '  分段上限: ' + cfg.maxKana + ' 假名 · 轮询 ' + poller.getInterval() + 'ms · 保留 ' + cfg.keepSegments + ' 段',
+        '  SDK: ' + (() => {
+          const st = sdkStatus();
+          if (st.ok) return st.sdkRoot + ' ✓（' + (st.source === 'env' ? 'YUKKURI_SDK_ROOT' : '默认位置') + '）';
+          const why = st.code === 'sdk-not-ascii' ? '路径含非 ASCII' : '找不到';
+          return st.sdkRoot + ' ✗ ' + why + '（/yukkuri sdk <路径> 指定）';
+        })(),
         '  段落: ' + order.length + ' 个在内存里',
         '  改设置: /yukkuri help',
       ].join('\n');
+    }
+
+    if (sub === 'sdk' || sub.startsWith('sdk ')) {
+      const arg = sub.slice(3).trim();
+
+      if (!arg || arg === 'status') {
+        const st = sdkStatus();
+        return [
+          'SDK: ' + (st.ok ? '✓ ' : '✗ ') + (st.sdkRoot || '(未设置)'),
+          '  来源: ' + (st.source === 'env'
+            ? 'YUKKURI_SDK_ROOT（环境变量优先）'
+            : st.source === 'default' ? '默认位置 ~/yukkuri-sdk' : '配置文件 sdkRoot'),
+          '  状态: ' + st.code + (st.ok ? '' : ' —— ' + st.message),
+          '  修改: /yukkuri sdk <纯 ASCII 目录>   |   /yukkuri sdk auto 回到默认',
+        ].join('\n');
+      }
+
+      if (arg === 'auto') {
+        cfg.sdkRoot = '';
+        if (sdkEnvOwned) {
+          if (envSdkRootAtStart) process.env.YUKKURI_SDK_ROOT = envSdkRootAtStart;
+          else delete process.env.YUKKURI_SDK_ROOT;
+          sdkEnvOwned = false;
+        }
+        saveCfg(cfg);
+        reloadCore();
+        sdkWarned = false;
+        const st = sdkStatus();
+        return 'SDK 路径已恢复默认：' + (st.ok ? '✓ ' : '✗ ') + st.sdkRoot
+          + (st.ok ? '' : '\n  ' + st.message);
+      }
+
+      const bad = validateSdkDir(arg);
+      if (bad) return fail('SDK 路径不可用：' + bad);
+
+      cfg.sdkRoot = arg;
+      // env 直接写：core 下一次 require 才算 SDK_ROOT，所以这里写就来得及
+      process.env.YUKKURI_SDK_ROOT = arg;
+      sdkEnvOwned = true;
+      saveCfg(cfg);
+      reloadCore();
+      sdkWarned = false;
+      const st = sdkStatus();
+      return 'SDK 路径已设为: ' + arg + '\n  自检: ' + (st.ok ? '✓ ' + st.message : '✗ ' + st.message);
     }
 
     if (sub === 'mode' || sub.startsWith('mode ')) {
@@ -916,6 +1125,7 @@ export function apply(ctx) {
         '  interval [ms]       看会话列表的间隔（300-10000，默认 1500）',
         '  keep [n]            内存里保留多少段（5-500，默认 40）',
         '  watch [id|all|none|current]  监听哪些会话',
+        '  sdk [路径|auto]     SDK 路径与自检（不响时先看这个）',
         '  say <文本>          立刻念一句',
         '  stop                清空播放队列',
       ].join('\n');
