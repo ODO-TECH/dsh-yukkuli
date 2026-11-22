@@ -380,23 +380,24 @@ tarball 与离线 zip 留作免 npm / 离线安装用；装法见 `packaging/off
 
 ```json
 "dependencies": {
-  "dsh-yukkuri-tts": "file:D:/Users Data/Desktop/油库里语音/plugin"
+  "dsh-yukkuri-tts": "github:ODO-TECH/dsh-yukkuli"
 },
 "dsh": { "profile": { "bundles": [ "…", "dsh-yukkuri-tts" ] } }
 ```
 
 `profiles\web\node_modules\dsh-yukkuri-tts` 是一个**实体目录**（`LinkType` 为空，不是 junction）。
 
-**2026-11-18 16:33 已重装为 0.3.1**（从仓库根装的，两个 profile 的依赖都是
-`file:D:/Users Data/Desktop/油库里语音`，包内带 `core/` 与新的 SDK 自检）。
-装完实测：10 条路由齐全、`/yukkuri sdk` 返回 ✓、`/say` 合成 200 / 83ms。
-之后的改动仍要重装才生效（新版 24 个测试文件，旧快照只有 23 个）。
+**2026-11-22 已删掉本地 `file:` 安装，改用发行版仓库装（两个 profile 都是 `github:ODO-TECH/dsh-yukkuli`）。**
+装的是仓库 `main` 的 tarball（pnpm 从 codeload 取，整棵树约 1 MB，含 `core/`），版本 0.3.1。
+装完实测：10 条路由齐全、`/yukkuri sdk` 返回 ✓、`/say` 合成 200 / 61–67ms。
 
-**结论：改源码不会自动生效，必须重装 + 重启 DSH。**
+**结论：改源码不会自动生效。** 发行版这条路要走「打包 → push → 重装 → 重启」四步；
+只是想在本机试一个未发布的改动，可以临时用 `file:<仓库根>` 装。
 
 ```powershell
-dsh plugin --profile web add "file:D:/Users Data/Desktop/油库里语音"
-dsh plugin --profile dsh-tui add "file:D:/Users Data/Desktop/油库里语音"
+node packaging/pack.cjs                     # 暂存树（可选，发布时才需要）
+dsh plugin --profile web add github:ODO-TECH/dsh-yukkuli
+dsh plugin --profile dsh-tui add github:ODO-TECH/dsh-yukkuli
 # 然后重启 dsh web / dsh-tui
 ```
 

@@ -195,7 +195,7 @@ DSH 只接受这两个形状：
 
 | 清单文件 | 身份 | 谁在用 |
 |---|---|---|
-| `package.json`（仓库根） | **`dsh-yukkuri-tts` 0.3.0，唯一对外清单** | `add github:ODO-TECH/dsh-yukkuli`；DSH 市场索引（git 源）；插件索引扫描。**npm 不发**（2026-11-18 决策） |
+| `package.json`（仓库根） | **`dsh-yukkuri-tts` 0.3.1，唯一对外清单** | `add github:ODO-TECH/dsh-yukkuli`；DSH 市场索引（git 源）；插件索引扫描。**npm 不发**（2026-11-18 决策） |
 | `plugin/package.json` | `private: true`，开发清单 | 只为在 `plugin/` 里跑测试（react / react-dom）。**别发** —— 它与根包同名 |
 | `core/package.json` | `private: true`，开发清单 | 声明 `type: commonjs` + 在 `core/` 里跑测试。**别发** |
 
